@@ -1,0 +1,713 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Luyện gõ 10 ngón miễn phí: bàn phím tô màu theo từng ngón tay, đo tốc độ WPM và độ chính xác, có tài khoản lưu tiến độ và bài luyện tiếng Anh.">
+<style>[hidden]{display:none!important} body{margin:0}</style>
+<title>Gõ Mười Ngón</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* Layout: one column. Lessons, stats, typing card, then a colour-coded keyboard that shows which finger types the next key. */
+:root {
+  --bg: #F1F4F2;
+  --surface: #FFFFFF;
+  --fg: #14201B;
+  --untyped: #707F78;
+  --line: #D3DBD6;
+  --key: #F6F8F7;
+  --bad: #BE332D;
+  --bad-bg: #FBE2E0;
+  --cur-bg: #E1E9E4;
+  --pinky: #C8453F;
+  --ring: #B3700F;
+  --middle: #2B8553;
+  --index: #2D6BCB;
+  --thumb: #7656BE;
+  --on-c: #FFFFFF;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0F1512; --surface: #18211C; --fg: #E8EFEB; --untyped: #84968D; --line: #2B3831;
+    --key: #1F2A24; --bad: #FF8A82; --bad-bg: #3B201E; --cur-bg: #2C3A33;
+    --pinky: #F0716B; --ring: #E9A23B; --middle: #55C07F; --index: #6AA3F5; --thumb: #A58BEA;
+    --on-c: #0F1512; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0F1512; --surface: #18211C; --fg: #E8EFEB; --untyped: #84968D; --line: #2B3831;
+  --key: #1F2A24; --bad: #FF8A82; --bad-bg: #3B201E; --cur-bg: #2C3A33;
+  --pinky: #F0716B; --ring: #E9A23B; --middle: #55C07F; --index: #6AA3F5; --thumb: #A58BEA;
+  --on-c: #0F1512; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.5;
+  padding-block: 28px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 880px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+h1 { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.9rem, 6vw, 2.6rem); line-height: 1.05; margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
+.sub { margin: 6px 0 0; color: var(--untyped); max-width: 60ch; }
+.label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--untyped); }
+
+.lessons { display: flex; flex-direction: column; gap: 8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+button { font: inherit; color: inherit; }
+.chip {
+  border: 1px solid var(--line); background: var(--surface); border-radius: 999px;
+  padding: 6px 14px; font-size: 0.9rem; cursor: pointer; transition: background .15s, color .15s;
+}
+.chip:hover { border-color: var(--fg); }
+.chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+button:focus-visible, input[type="checkbox"]:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+.stat b { display: block; font-family: var(--font-mono); font-weight: 600; font-size: clamp(1.25rem, 5vw, 1.8rem); font-variant-numeric: tabular-nums; line-height: 1.2; }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px clamp(14px, 3vw, 24px); cursor: text; transition: opacity .15s; }
+.card.unfocused .text { opacity: 0.5; }
+.text {
+  position: relative; overflow: hidden; height: 6.3em;
+  font-family: var(--font-mono); font-size: clamp(1.05rem, 3.2vw, 1.5rem); line-height: 2.1em;
+  transition: opacity .15s; user-select: none; -webkit-user-select: none;
+}
+.w { display: inline-block; white-space: nowrap; }
+.c { white-space: pre; color: var(--untyped); border-radius: 3px; }
+.c.ok { color: var(--fg); }
+.c.bad { color: var(--bad); background: var(--bad-bg); }
+.c.cur { background: var(--cur-bg); box-shadow: inset 0 -2px 0 var(--fg); }
+.hint { margin: 10px 0 0; min-height: 1.5em; color: var(--untyped); font-size: 0.92rem; }
+.cap { position: absolute; opacity: 0; width: 1px; height: 1px; left: 0; top: 0; font-size: 16px; border: 0; padding: 0; pointer-events: none; }
+
+.result { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+.result p { margin: 0; flex: 1 1 18rem; min-width: 0; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 7px 14px; font-size: 0.9rem; cursor: pointer; }
+.btn:hover { border-color: var(--fg); }
+.btn.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+
+.kb-section { display: flex; flex-direction: column; gap: 10px; }
+.kb-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 16px; }
+.toggles { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.9rem; }
+.toggles label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.kb { display: flex; flex-direction: column; gap: clamp(3px, 0.8vw, 6px); background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: clamp(8px, 2vw, 16px); }
+.row { display: flex; gap: clamp(3px, 0.8vw, 6px); }
+.key {
+  flex: 1 1 0; min-width: 0; height: clamp(30px, 6.4vw, 46px);
+  display: flex; align-items: center; justify-content: center; position: relative;
+  font-family: var(--font-mono); font-size: clamp(0.6rem, 1.9vw, 0.85rem); text-transform: uppercase;
+  background: color-mix(in srgb, var(--c) 14%, var(--key));
+  border: 1px solid color-mix(in srgb, var(--c) 38%, var(--line));
+  border-radius: 6px; color: var(--fg); transition: background .08s, color .08s, transform .08s;
+}
+.key.on { background: var(--c); color: var(--on-c); border-color: var(--c); transform: translateY(1px); font-weight: 600; }
+.key.bump::after { content: ""; position: absolute; bottom: 5px; left: 50%; width: 38%; height: 2px; margin-left: -19%; background: currentColor; opacity: .55; border-radius: 1px; }
+.spacer { flex-shrink: 1; }
+.fp { --c: var(--pinky); } .fr { --c: var(--ring); } .fm { --c: var(--middle); } .fi { --c: var(--index); } .ft { --c: var(--thumb); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.85rem; color: var(--untyped); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend i { width: 12px; height: 12px; border-radius: 3px; background: var(--c); display: inline-block; }
+
+.tips { color: var(--untyped); font-size: 0.9rem; margin: 0; max-width: 70ch; }
+.tips b { color: var(--fg); font-weight: 600; }
+
+.top { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 20px; }
+.top > div:first-child { min-width: 0; flex: 1 1 18rem; }
+.acct { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; }
+.who { font-size: 0.92rem; }
+.who b { font-weight: 600; }
+.overlay {
+  position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--bg) 72%, transparent); backdrop-filter: blur(3px);
+  padding-top: max(16px, env(safe-area-inset-top, 0px)); padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.modal { width: 100%; max-width: 380px; max-height: 100%; overflow: auto; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 12px 40px rgba(0,0,0,.2); }
+.modal-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.modal h2 { margin: 0; font-family: var(--font-display); font-size: 1.3rem; }
+.tabs { display: flex; gap: 4px; background: var(--key); border: 1px solid var(--line); border-radius: 10px; padding: 4px; }
+.tab { flex: 1; border: 0; background: transparent; padding: 7px; border-radius: 7px; cursor: pointer; font-weight: 500; }
+.tab[aria-selected="true"] { background: var(--fg); color: var(--bg); }
+#form { display: flex; flex-direction: column; gap: 12px; }
+.field { display: flex; flex-direction: column; gap: 4px; }
+.field label { font-size: 0.85rem; font-weight: 500; }
+.field input { font: inherit; font-size: 16px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--fg); min-width: 0; }
+.field input:focus-visible { outline: 2px solid var(--fg); outline-offset: 1px; }
+.form-err { color: var(--bad); font-size: 0.88rem; margin: 0; min-height: 1.3em; }
+.note { color: var(--untyped); font-size: 0.82rem; margin: 0; }
+
+.profile { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px clamp(14px, 3vw, 24px); display: flex; flex-direction: column; gap: 14px; }
+.profile p { margin: 0; }
+.ptiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(7rem, 1fr)); gap: 10px; }
+.ptiles .stat { background: var(--bg); }
+.bars { display: flex; align-items: flex-end; gap: 6px; height: 124px; border-bottom: 1px solid var(--line); }
+.bar { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; font-family: var(--font-mono); font-size: 0.66rem; color: var(--untyped); font-variant-numeric: tabular-nums; }
+.bar i { display: block; width: 100%; max-width: 30px; background: var(--index); border-radius: 3px 3px 0 0; margin-top: 3px; }
+.bestlist { display: grid; grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr)); gap: 4px 20px; font-size: 0.9rem; }
+.bestlist div { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; border-bottom: 1px solid var(--line); }
+.bestlist b { font-family: var(--font-mono); font-weight: 600; }
+.profile-foot { display: flex; justify-content: flex-end; }
+.btn.danger { color: var(--bad); }
+
+@media (max-width: 520px) {
+  .stat { padding: 8px 8px; }
+  .label { letter-spacing: 0.04em; font-size: 0.66rem; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>Gõ Mười Ngón</h1>
+      <p class="sub">Luyện gõ không nhìn phím. Mỗi ngón giữ một vùng phím, trang này đo tốc độ và độ chính xác của bạn.</p>
+    </div>
+    <div class="acct" id="acct"></div>
+  </header>
+
+  <section class="lessons" aria-label="Chọn bài tập">
+    <span class="label">Bài tập</span>
+    <div class="chips" id="chips"></div>
+  </section>
+
+  <section class="stats" aria-label="Kết quả">
+    <div class="stat"><span class="label">Tốc độ (WPM)</span><b id="sWpm">0</b></div>
+    <div class="stat"><span class="label">Chính xác</span><b id="sAcc">100%</b></div>
+    <div class="stat"><span class="label">Thời gian</span><b id="sTime">0:00</b></div>
+    <div class="stat"><span class="label">Lỗi</span><b id="sErr">0</b></div>
+  </section>
+
+  <section class="card unfocused" id="card" aria-label="Khung luyện gõ">
+    <div class="text" id="text"></div>
+    <input class="cap" id="cap" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-label="Gõ vào đây">
+    <p class="hint" id="hint"></p>
+    <div class="result" id="result" hidden aria-live="polite">
+      <p id="resultMsg"></p>
+      <button class="btn" id="again" type="button">Làm lại</button>
+      <button class="btn primary" id="next" type="button">Bài tiếp theo</button>
+    </div>
+  </section>
+
+  <section class="kb-section" id="kbSection" aria-label="Bàn phím">
+    <div class="kb-head">
+      <span class="label">Bàn phím và ngón tay</span>
+      <div class="toggles">
+        <label for="tKb"><input type="checkbox" id="tKb" checked> Hiện bàn phím</label>
+        <label for="tHint"><input type="checkbox" id="tHint" checked> Hiện gợi ý ngón tay</label>
+      </div>
+    </div>
+    <div id="kbWrap">
+      <div class="kb" id="kb"></div>
+      <div class="legend" id="legend" style="margin-top:10px"></div>
+    </div>
+  </section>
+
+  <section class="profile" id="profile" aria-label="Tiến độ"></section>
+
+  <p class="tips"><b>Tư thế:</b> lưng thẳng, cổ tay thả lỏng, hai ngón trỏ đặt trên phím F và J (có gạch nổi). Sau mỗi phím, đưa ngón tay về hàng cơ sở. Gõ đúng trước, tốc độ sẽ đến sau. Nhấn Esc để làm lại bài, Backspace để sửa lỗi.</p>
+</div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <div class="modal-head">
+      <h2 id="mTitle">Tài khoản</h2>
+      <button class="btn" id="mClose" type="button">Đóng</button>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" id="tabLogin" aria-selected="true" type="button">Đăng nhập</button>
+      <button class="tab" role="tab" id="tabReg" aria-selected="false" type="button">Tạo tài khoản</button>
+    </div>
+    <form id="form" novalidate>
+      <div class="field"><label for="fUser">Tên đăng nhập</label><input id="fUser" autocomplete="username" maxlength="20" autocapitalize="off" autocorrect="off" spellcheck="false"></div>
+      <div class="field"><label for="fPass">Mật khẩu</label><input id="fPass" type="password" autocomplete="current-password"></div>
+      <div class="field" id="confirmField" hidden><label for="fPass2">Nhập lại mật khẩu</label><input id="fPass2" type="password" autocomplete="new-password"></div>
+      <p class="form-err" id="fErr" role="alert"></p>
+      <button class="btn primary" id="fSubmit" type="submit" style="width:100%">Đăng nhập</button>
+    </form>
+    <p class="note" id="mNote">Tài khoản được lưu ngay trong trình duyệt này. Mật khẩu được mã hóa trước khi lưu, nhưng dữ liệu không đồng bộ sang máy khác, và không khôi phục được nếu bạn xóa dữ liệu trình duyệt hoặc quên mật khẩu.</p>
+  </div>
+</div>
+
+<script>
+(function () {
+  var $ = function (s) { return document.querySelector(s); };
+  var rnd = function (n) { return Math.floor(Math.random() * n); };
+  var pick = function (a) { return a[rnd(a.length)]; };
+
+  /* ---------- Lesson content ---------- */
+  var HOME = 'ask sad fad dad lad lass all fall add adds flask salad alas flak falls lads asks dads sadasks'.split(' ');
+  var HOMEG = 'glad flash shall hall half hash gash dash flag gag lag sag hag jag slash flask glass shag gals lash'.split(' ');
+  var TOP = 'type quiet power tree write there your pure were wet top tower quote pretty poetry flower field fruit pride spider shelf light house water great first world sleep keep'.split(' ');
+  var BOTTOM = 'can man van cab mad scan bank calm black chalk hand snack lamb jam bad cash bash mask sand land lack back hack slam dash sack nab clan banks'.split(' ');
+  var COMMON = 'about after again also because before between children country different every example family friend good great house important just keep large learn little look make most never night number other people place point right school small sound still story study thing think three through under until water where which while world write young'.split(' ');
+  var PUNCT = [
+    'The quick brown fox jumps over the lazy dog.',
+    'Practice makes perfect, so keep going every day.',
+    'Do you like tea or coffee?',
+    'Yes, I do; I drink tea every morning.',
+    "Typing is easy, isn't it?",
+    "Wait! Don't look at the keys."
+  ];
+  var COMPARE = [
+    'This book is more interesting than that one.',
+    'She runs faster than her brother.',
+    'He is the tallest student in the class.',
+    'The more you practise, the better you become.',
+    'The weather is getting colder and colder.',
+    'My house is twice as large as yours.',
+    'This test is less difficult than I expected.',
+    'Of the three methods, this one works the least effectively.',
+    'Her English is far better than mine.',
+    'It is the most beautiful beach I have ever visited.'
+  ];
+
+  function words(list, n, semi) {
+    var out = [], last = '', w;
+    while (out.length < n) {
+      if (semi && out.length > 0 && out.length % 5 === 4) { w = ';'; }
+      else { do { w = pick(list); } while (w === last); }
+      out.push(w); last = w;
+    }
+    return out.join(' ');
+  }
+  function sentences(list, k) {
+    var a = list.slice(), out = [];
+    while (out.length < k) out.push(a.splice(rnd(a.length), 1)[0]);
+    return out.join(' ');
+  }
+  function digits() {
+    var out = [];
+    for (var i = 0; i < 10; i++) {
+      var len = 3 + rnd(3), s = '';
+      for (var j = 0; j < len; j++) s += rnd(10);
+      out.push(s);
+    }
+    return out.join(' ');
+  }
+
+  var LESSONS = [
+    { id: 'home',   name: 'Hàng cơ sở',        desc: 'a s d f j k l ;',          make: function () { return words(HOME, 26, true); } },
+    { id: 'homeg',  name: 'Thêm G và H',       desc: 'a s d f g h j k l',        make: function () { return words(HOMEG, 24, false); } },
+    { id: 'top',    name: 'Hàng trên',         desc: 'q w e r t y u i o p',      make: function () { return words(TOP, 22, false); } },
+    { id: 'bottom', name: 'Hàng dưới',         desc: 'z x c v b n m',            make: function () { return words(BOTTOM, 24, false); } },
+    { id: 'words',  name: 'Từ tiếng Anh',      desc: 'Từ thông dụng',            make: function () { return words(COMMON, 22, false); } },
+    { id: 'punct',  name: 'Hoa và dấu câu',    desc: 'Shift, dấu chấm, phẩy',    make: function () { return sentences(PUNCT, 3); } },
+    { id: 'compare',name: 'Câu so sánh',       desc: 'Ngữ pháp so sánh',         make: function () { return sentences(COMPARE, 3); } },
+    { id: 'digits', name: 'Hàng số',           desc: '0 1 2 3 4 5 6 7 8 9',      make: digits }
+  ];
+
+  /* ---------- Keyboard model ---------- */
+  var ROWS = [
+    [['`','fp','l'],['1','fp','l'],['2','fr','l'],['3','fm','l'],['4','fi','l'],['5','fi','l'],['6','fi','r'],['7','fi','r'],['8','fm','r'],['9','fr','r'],['0','fp','r'],['-','fp','r'],['=','fp','r'],['back','fp','r',2]],
+    [['tab','fp','l',1.5],['q','fp','l'],['w','fr','l'],['e','fm','l'],['r','fi','l'],['t','fi','l'],['y','fi','r'],['u','fi','r'],['i','fm','r'],['o','fr','r'],['p','fp','r'],['[','fp','r'],[']','fp','r'],['\\','fp','r',1.5]],
+    [['caps','fp','l',1.8],['a','fp','l'],['s','fr','l'],['d','fm','l'],['f','fi','l'],['g','fi','l'],['h','fi','r'],['j','fi','r'],['k','fm','r'],['l','fr','r'],[';','fp','r'],["'",'fp','r'],['enter','fp','r',2.2]],
+    [['shiftL','fp','l',2.3],['z','fp','l'],['x','fr','l'],['c','fm','l'],['v','fi','l'],['b','fi','l'],['n','fi','r'],['m','fi','r'],[',','fm','r'],['.','fr','r'],['/','fp','r'],['shiftR','fp','r',2.7]],
+    [['space','ft','b',6]]
+  ];
+  var LABELS = { back: '⌫', tab: 'Tab', caps: 'Caps', enter: 'Enter', shiftL: 'Shift', shiftR: 'Shift', space: '' };
+  var FINGER = { fp: 'út', fr: 'áp út', fm: 'giữa', fi: 'trỏ', ft: 'cái' };
+  var HAND = { l: 'trái', r: 'phải', b: '' };
+  var SHIFTED = { '!':'1','@':'2','#':'3','$':'4','%':'5','^':'6','&':'7','*':'8','(':'9',')':'0','_':'-','+':'=','{':'[','}':']','|':'\\',':':';','"':"'",'<':',','>':'.','?':'/','~':'`' };
+
+  function keyFor(ch) {
+    if (ch === ' ') return { k: 'space', shift: false };
+    if (/[A-Z]/.test(ch)) return { k: ch.toLowerCase(), shift: true };
+    if (SHIFTED[ch]) return { k: SHIFTED[ch], shift: true };
+    return { k: ch, shift: false };
+  }
+
+  var kb = $('#kb'), keyMap = {}, keyEls = [];
+  ROWS.forEach(function (row, ri) {
+    var r = document.createElement('div'); r.className = 'row';
+    if (ri === 4) { var s1 = document.createElement('div'); s1.className = 'spacer'; s1.style.flex = '4.5 1 0'; r.appendChild(s1); }
+    row.forEach(function (d) {
+      var el = document.createElement('div');
+      el.className = 'key ' + d[1] + ((d[0] === 'f' || d[0] === 'j') ? ' bump' : '');
+      el.style.flex = (d[3] || 1) + ' 1 0';
+      el.dataset.h = d[2];
+      el.textContent = (d[0] in LABELS) ? LABELS[d[0]] : d[0];
+      keyMap[d[0]] = el; keyEls.push(el); r.appendChild(el);
+    });
+    if (ri === 4) { var s2 = document.createElement('div'); s2.className = 'spacer'; s2.style.flex = '4.5 1 0'; r.appendChild(s2); }
+    kb.appendChild(r);
+  });
+  var legend = $('#legend');
+  [['fp','Ngón út'],['fr','Ngón áp út'],['fm','Ngón giữa'],['fi','Ngón trỏ'],['ft','Ngón cái']].forEach(function (x) {
+    var s = document.createElement('span'); s.className = x[0];
+    s.innerHTML = '<i></i>' + x[1]; legend.appendChild(s);
+  });
+
+  /* ---------- Storage (optional) ---------- */
+  function load(key, fallback) { try { var v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; } catch (e) { return fallback; } }
+  function save(key, val) { try { localStorage.setItem(key, JSON.stringify(val)); } catch (e) {} }
+  var guestBest = load('gmn-best', {});
+  var prefs = load('gmn-prefs', { kb: true, hint: true });
+  var users = load('gmn-users', {});
+  var session = load('gmn-session', null);
+  if (session && !users[session]) session = null;
+  var storageOk = true;
+  try { localStorage.setItem('gmn-test', '1'); localStorage.removeItem('gmn-test'); } catch (e) { storageOk = false; }
+  function me() { return session ? users[session] : null; }
+  function getBest() { var u = me(); return u ? u.best : guestBest; }
+  function persistBest() { if (me()) save('gmn-users', users); else save('gmn-best', guestBest); }
+  function recordResult(id, wpm, acc) {
+    var u = me(); if (!u) return;
+    u.history.push({ t: Date.now(), l: id, w: wpm, a: acc });
+    if (u.history.length > 60) u.history.splice(0, u.history.length - 60);
+    save('gmn-users', users);
+  }
+
+  /* ---------- State ---------- */
+  var cur = 0, text = '', typed = [], spans = [], state = 'idle';
+  var total = 0, errors = 0, startT = 0, endT = 0, timer = null;
+
+  var textEl = $('#text'), cap = $('#cap'), card = $('#card'), hintEl = $('#hint');
+  var sWpm = $('#sWpm'), sAcc = $('#sAcc'), sTime = $('#sTime'), sErr = $('#sErr');
+  var result = $('#result'), resultMsg = $('#resultMsg');
+
+  function renderText() {
+    textEl.innerHTML = ''; spans = [];
+    var frag = document.createDocumentFragment(), w = null;
+    for (var i = 0; i < text.length; i++) {
+      var ch = text[i], s = document.createElement('span');
+      s.className = 'c'; s.textContent = ch; spans.push(s);
+      if (ch === ' ') { if (w) { frag.appendChild(w); w = null; } frag.appendChild(s); }
+      else { if (!w) { w = document.createElement('span'); w.className = 'w'; } w.appendChild(s); }
+    }
+    if (w) frag.appendChild(w);
+    textEl.appendChild(frag);
+    textEl.scrollTop = 0;
+  }
+
+  function paintAll() {
+    for (var i = 0; i < spans.length; i++) {
+      var c = 'c';
+      if (i < typed.length) c += typed[i] === text[i] ? ' ok' : ' bad';
+      else if (i === typed.length && state !== 'done') c += ' cur';
+      spans[i].className = c;
+    }
+    var target = spans[Math.min(typed.length, spans.length - 1)];
+    var lh = parseFloat(getComputedStyle(textEl).lineHeight) || 40;
+    textEl.scrollTop = Math.max(0, (Math.floor(target.offsetTop / lh) - 1) * lh);
+  }
+
+  function countCorrect() {
+    var n = 0;
+    for (var i = 0; i < typed.length; i++) if (typed[i] === text[i]) n++;
+    return n;
+  }
+  function fmtTime(sec) {
+    var s = Math.floor(sec); return Math.floor(s / 60) + ':' + ('0' + (s % 60)).slice(-2);
+  }
+  function stats() {
+    var sec = state === 'idle' ? 0 : ((state === 'done' ? endT : performance.now()) - startT) / 1000;
+    var wpm = sec > 0 ? Math.round(countCorrect() / 5 / (Math.max(sec, 1) / 60)) : 0;
+    var acc = total ? Math.round(100 * (total - errors) / total) : 100;
+    return { sec: sec, wpm: wpm, acc: acc };
+  }
+  function updateStats() {
+    var s = stats();
+    sWpm.textContent = s.wpm; sAcc.textContent = s.acc + '%';
+    sTime.textContent = fmtTime(s.sec); sErr.textContent = errors;
+    return s;
+  }
+
+  function updateKeyboard() {
+    keyEls.forEach(function (e) { e.classList.remove('on'); });
+    var ch = (state === 'done' || typed.length >= text.length) ? null : text[typed.length];
+    var msg = '';
+    if (ch) {
+      var kf = keyFor(ch), el = keyMap[kf.k];
+      if (el) {
+        el.classList.add('on');
+        var cls = el.className.match(/\bf[prmit]\b/);
+        var f = cls ? cls[0] : 'fi', h = el.dataset.h;
+        var disp = ch === ' ' ? 'cách' : ch;
+        msg = 'Phím ' + disp + ' dùng ngón ' + FINGER[f] + (HAND[h] ? ' ' + HAND[h] : '');
+        if (kf.shift) {
+          var side = h === 'l' ? 'shiftR' : 'shiftL';
+          keyMap[side].classList.add('on');
+          msg += ', giữ Shift bằng ngón út ' + (h === 'l' ? 'phải' : 'trái');
+        }
+      }
+    }
+    return msg;
+  }
+  var lastMsg = '';
+  function updateHint() {
+    lastMsg = updateKeyboard();
+    var t;
+    if (state === 'done') t = '';
+    else if (document.activeElement !== cap) t = 'Bấm vào khung chữ rồi bắt đầu gõ.';
+    else if (state === 'idle') t = 'Đặt tay lên hàng cơ sở. ' + lastMsg + '.';
+    else t = lastMsg ? lastMsg + '.' : '';
+    hintEl.textContent = t;
+    hintEl.hidden = !prefs.hint;
+  }
+
+  function reset(keepText) {
+    if (!keepText) text = LESSONS[cur].make();
+    state = 'idle'; typed = []; total = 0; errors = 0; clearInterval(timer);
+    result.hidden = true;
+    renderText(); paintAll(); updateStats(); updateHint();
+  }
+
+  function start() {
+    state = 'running'; startT = performance.now();
+    timer = setInterval(updateStats, 200);
+  }
+  function finish() {
+    state = 'done'; endT = performance.now(); clearInterval(timer);
+    var s = updateStats(); paintAll(); updateHint();
+    var id = LESSONS[cur].id, bst = getBest(), prev = bst[id] || 0, msg;
+    if (s.wpm > prev) { bst[id] = s.wpm; persistBest(); msg = 'Xong bài: ' + s.wpm + ' WPM, chính xác ' + s.acc + '%.' + (prev ? ' Cao hơn kỷ lục cũ (' + prev + ' WPM).' : ' Đây là kết quả đầu tiên của bài này.'); }
+    else msg = 'Xong bài: ' + s.wpm + ' WPM, chính xác ' + s.acc + '%. Kỷ lục của bài này: ' + prev + ' WPM.';
+    if (!me()) msg += ' Đăng nhập để lưu lại tiến độ.';
+    resultMsg.textContent = msg;
+    recordResult(id, s.wpm, s.acc); renderProfile();
+    $('#next').hidden = cur >= LESSONS.length - 1;
+    result.hidden = false;
+  }
+
+  function onChar(ch) {
+    if (state === 'done' || typed.length >= text.length) return;
+    if (state === 'idle') start();
+    total++;
+    if (ch !== text[typed.length]) errors++;
+    typed.push(ch);
+    paintAll(); updateStats(); updateHint();
+    if (typed.length === text.length) finish();
+  }
+  function onBack() {
+    if (state !== 'running' || !typed.length) return;
+    typed.pop(); paintAll(); updateStats(); updateHint();
+  }
+
+  /* ---------- Input wiring ---------- */
+  cap.addEventListener('input', function (e) {
+    if (e.inputType === 'deleteContentBackward') { onBack(); }
+    else {
+      var d = e.data != null ? e.data : cap.value;
+      for (var i = 0; i < d.length; i++) onChar(d[i]);
+    }
+    cap.value = '';
+  });
+  cap.addEventListener('keydown', function (e) {
+    if (e.key === 'Backspace') { e.preventDefault(); onBack(); }
+    else if (e.key === 'Escape') { e.preventDefault(); reset(true); }
+    else if (e.key === 'Enter') { e.preventDefault(); }
+  });
+  cap.addEventListener('focus', function () { card.classList.remove('unfocused'); updateHint(); });
+  cap.addEventListener('blur', function () { card.classList.add('unfocused'); updateHint(); });
+  card.addEventListener('mousedown', function (e) {
+    if (e.target.closest('button')) return;
+    e.preventDefault(); cap.focus();
+  });
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+    if (!$('#overlay').hidden) return;
+    if (document.activeElement === cap) return;
+    var ae = document.activeElement, t = ae && ae.tagName;
+    if (t === 'BUTTON' || (t === 'INPUT' && ae.type === 'checkbox')) { if (e.key.length === 1 || e.key === 'Backspace') cap.focus(); return; }
+    if (e.key.length === 1) cap.focus();
+  });
+
+  /* ---------- Lessons, buttons, preferences ---------- */
+  var chips = $('#chips');
+  LESSONS.forEach(function (l, i) {
+    var b = document.createElement('button');
+    b.type = 'button'; b.className = 'chip'; b.textContent = l.name; b.title = l.desc;
+    b.addEventListener('click', function () { select(i); cap.focus(); });
+    chips.appendChild(b);
+  });
+  function select(i) {
+    cur = i;
+    Array.prototype.forEach.call(chips.children, function (c, k) { c.setAttribute('aria-pressed', k === i ? 'true' : 'false'); });
+    reset(false);
+  }
+  $('#again').addEventListener('click', function () { reset(true); cap.focus(); });
+  $('#next').addEventListener('click', function () { if (cur < LESSONS.length - 1) select(cur + 1); cap.focus(); });
+
+  var tKb = $('#tKb'), tHint = $('#tHint');
+  function applyPrefs() {
+    $('#kbWrap').hidden = !prefs.kb;
+    tKb.checked = prefs.kb; tHint.checked = prefs.hint; hintEl.hidden = !prefs.hint;
+  }
+  tKb.addEventListener('change', function () { prefs.kb = tKb.checked; save('gmn-prefs', prefs); applyPrefs(); cap.focus(); });
+  tHint.addEventListener('change', function () { prefs.hint = tHint.checked; save('gmn-prefs', prefs); applyPrefs(); cap.focus(); });
+
+  /* ---------- Accounts (stored in this browser only) ---------- */
+  var overlay = $('#overlay'), mode = 'login';
+  var fUser = $('#fUser'), fPass = $('#fPass'), fPass2 = $('#fPass2'), fErr = $('#fErr'), fSubmit = $('#fSubmit');
+  var canCrypto = !!(window.crypto && crypto.subtle && window.TextEncoder);
+
+  function mk(tag, cls, txt) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (txt != null) e.textContent = txt;
+    return e;
+  }
+  function b64(buf) { var s = ''; new Uint8Array(buf).forEach(function (b) { s += String.fromCharCode(b); }); return btoa(s); }
+  function unb64(s) { var bin = atob(s), a = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return a; }
+  function hashPw(pw, salt) {
+    return crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveBits']).then(function (k) {
+      return crypto.subtle.deriveBits({ name: 'PBKDF2', salt: salt, iterations: 100000, hash: 'SHA-256' }, k, 256);
+    }).then(b64);
+  }
+  function register(name, pw) {
+    var key = name.toLowerCase();
+    if (users[key]) return Promise.reject('Tên đăng nhập này đã có người dùng.');
+    var salt = crypto.getRandomValues(new Uint8Array(16));
+    return hashPw(pw, salt).then(function (h) {
+      var b = {}; for (var k in guestBest) b[k] = guestBest[k];
+      users[key] = { name: name, salt: b64(salt), hash: h, created: Date.now(), best: b, history: [] };
+      session = key; save('gmn-users', users); save('gmn-session', session);
+    });
+  }
+  function login(name, pw) {
+    var key = name.toLowerCase(), u = users[key], bad = 'Sai tên đăng nhập hoặc mật khẩu.';
+    if (!u) return Promise.reject(bad);
+    return hashPw(pw, unb64(u.salt)).then(function (h) {
+      if (h !== u.hash) throw bad;
+      session = key; save('gmn-session', session);
+    });
+  }
+  function logout() { session = null; save('gmn-session', null); renderAcct(); renderProfile(); }
+
+  function setMode(m) {
+    mode = m;
+    $('#tabLogin').setAttribute('aria-selected', m === 'login');
+    $('#tabReg').setAttribute('aria-selected', m === 'register');
+    $('#confirmField').hidden = m !== 'register';
+    fSubmit.textContent = m === 'login' ? 'Đăng nhập' : 'Tạo tài khoản';
+    fPass.setAttribute('autocomplete', m === 'login' ? 'current-password' : 'new-password');
+    fErr.textContent = '';
+  }
+  function openModal(m) {
+    setMode(m || 'login');
+    $('#mNote').textContent = 'Tài khoản được lưu ngay trong trình duyệt này. Mật khẩu được mã hóa trước khi lưu, nhưng dữ liệu không đồng bộ sang máy khác, và không khôi phục được nếu bạn xóa dữ liệu trình duyệt hoặc quên mật khẩu.' +
+      (storageOk ? '' : ' Trình duyệt đang chặn lưu dữ liệu, nên tài khoản chỉ có tác dụng đến khi bạn đóng trang.');
+    overlay.hidden = false; fUser.focus();
+  }
+  function closeModal() { overlay.hidden = true; fPass.value = ''; fPass2.value = ''; cap.focus(); }
+  $('#tabLogin').addEventListener('click', function () { setMode('login'); fUser.focus(); });
+  $('#tabReg').addEventListener('click', function () { setMode('register'); fUser.focus(); });
+  $('#mClose').addEventListener('click', closeModal);
+  overlay.addEventListener('mousedown', function (e) { if (e.target === overlay) closeModal(); });
+  overlay.addEventListener('keydown', function (e) { if (e.key === 'Escape') { e.preventDefault(); closeModal(); } });
+  $('#form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var name = fUser.value.trim(), pw = fPass.value;
+    if (!canCrypto) { fErr.textContent = 'Trình duyệt này không hỗ trợ mã hóa mật khẩu. Hãy mở trang bằng Chrome, Edge hoặc Safari bản mới, qua địa chỉ https.'; return; }
+    if (mode === 'register') {
+      if (!/^[A-Za-z0-9_.-]{3,20}$/.test(name)) { fErr.textContent = 'Tên đăng nhập dài 3 đến 20 ký tự, chỉ gồm chữ không dấu, số, dấu chấm, gạch dưới hoặc gạch ngang.'; return; }
+      if (pw.length < 6) { fErr.textContent = 'Mật khẩu cần ít nhất 6 ký tự.'; return; }
+      if (pw !== fPass2.value) { fErr.textContent = 'Hai mật khẩu chưa giống nhau.'; return; }
+    } else if (!name || !pw) { fErr.textContent = 'Nhập tên đăng nhập và mật khẩu.'; return; }
+    fErr.textContent = ''; fSubmit.disabled = true;
+    (mode === 'register' ? register(name, pw) : login(name, pw)).then(function () {
+      fSubmit.disabled = false; fUser.value = ''; closeModal(); renderAcct(); renderProfile();
+    }).catch(function (err) {
+      fSubmit.disabled = false;
+      fErr.textContent = typeof err === 'string' ? err : 'Có lỗi xảy ra, hãy thử lại.';
+    });
+  });
+
+  function renderAcct() {
+    var box = $('#acct'); box.innerHTML = '';
+    var u = me();
+    if (u) {
+      var who = mk('span', 'who'); who.appendChild(document.createTextNode('Xin chào, ')); who.appendChild(mk('b', '', u.name));
+      var out = mk('button', 'btn', 'Đăng xuất'); out.type = 'button'; out.addEventListener('click', logout);
+      box.appendChild(who); box.appendChild(out);
+    } else {
+      var a = mk('button', 'btn primary', 'Đăng nhập'); a.type = 'button'; a.addEventListener('click', function () { openModal('login'); });
+      var b = mk('button', 'btn', 'Tạo tài khoản'); b.type = 'button'; b.addEventListener('click', function () { openModal('register'); });
+      box.appendChild(a); box.appendChild(b);
+    }
+  }
+
+  function lessonName(id) { for (var i = 0; i < LESSONS.length; i++) if (LESSONS[i].id === id) return LESSONS[i].name; return id; }
+  function tile(label, val) { var d = mk('div', 'stat'); d.appendChild(mk('span', 'label', label)); d.appendChild(mk('b', '', val)); return d; }
+
+  function renderProfile() {
+    var el = $('#profile'); el.innerHTML = '';
+    var u = me();
+    if (!u) {
+      el.appendChild(mk('span', 'label', 'Tiến độ'));
+      el.appendChild(mk('p', '', 'Đăng nhập để lưu kết quả từng bài, xem biểu đồ tốc độ và kỷ lục của riêng bạn.'));
+      var row = mk('div', 'profile-foot'); row.style.justifyContent = 'flex-start';
+      var b = mk('button', 'btn primary', 'Đăng nhập hoặc tạo tài khoản'); b.type = 'button';
+      b.addEventListener('click', function () { openModal('login'); });
+      row.appendChild(b); el.appendChild(row);
+      return;
+    }
+    el.appendChild(mk('span', 'label', 'Tiến độ của ' + u.name));
+    var h = u.history, last = h.slice(-10), n = last.length, sw = 0, sa = 0;
+    last.forEach(function (x) { sw += x.w; sa += x.a; });
+    var top = 0; for (var k in u.best) if (u.best[k] > top) top = u.best[k];
+    var tiles = mk('div', 'ptiles');
+    tiles.appendChild(tile('Số lượt đã gõ', String(h.length)));
+    tiles.appendChild(tile('WPM trung bình', n ? String(Math.round(sw / n)) : '–'));
+    tiles.appendChild(tile('WPM cao nhất', top ? String(top) : '–'));
+    tiles.appendChild(tile('Chính xác TB', n ? Math.round(sa / n) + '%' : '–'));
+    el.appendChild(tiles);
+
+    if (!h.length) {
+      el.appendChild(mk('p', 'note', 'Chưa có lượt nào. Hoàn thành một bài để thấy biểu đồ tốc độ ở đây.'));
+    } else {
+      var rec = h.slice(-12), max = 1;
+      rec.forEach(function (x) { if (x.w > max) max = x.w; });
+      var bars = mk('div', 'bars'); bars.setAttribute('role', 'img');
+      bars.setAttribute('aria-label', 'Tốc độ WPM của ' + rec.length + ' lượt gần nhất');
+      rec.forEach(function (x) {
+        var bar = mk('div', 'bar'); bar.title = lessonName(x.l) + ': ' + x.w + ' WPM, chính xác ' + x.a + '%';
+        bar.appendChild(mk('span', '', String(x.w)));
+        var i = document.createElement('i'); i.style.height = Math.max(3, Math.round(x.w / max * 84)) + 'px';
+        bar.appendChild(i); bars.appendChild(bar);
+      });
+      el.appendChild(bars);
+      el.appendChild(mk('p', 'note', rec.length + ' lượt gần nhất, mới nhất ở bên phải. Số trên mỗi cột là WPM.'));
+    }
+
+    var list = mk('div', 'bestlist'), any = false;
+    LESSONS.forEach(function (l) {
+      if (u.best[l.id]) { any = true; var d = mk('div'); d.appendChild(mk('span', '', l.name)); d.appendChild(mk('b', '', u.best[l.id] + ' WPM')); list.appendChild(d); }
+    });
+    if (any) { el.appendChild(mk('span', 'label', 'Kỷ lục từng bài')); el.appendChild(list); }
+
+    var foot = mk('div', 'profile-foot');
+    var del = mk('button', 'btn danger', 'Xóa tài khoản'); del.type = 'button';
+    var armed = false, tm = null;
+    del.addEventListener('click', function () {
+      if (!armed) {
+        armed = true; del.textContent = 'Bấm lần nữa để xóa hẳn';
+        tm = setTimeout(function () { armed = false; del.textContent = 'Xóa tài khoản'; }, 4000);
+        return;
+      }
+      clearTimeout(tm);
+      delete users[session]; session = null; save('gmn-users', users); save('gmn-session', null);
+      renderAcct(); renderProfile();
+    });
+    foot.appendChild(del); el.appendChild(foot);
+  }
+
+  applyPrefs();
+  select(0);
+  renderAcct();
+  renderProfile();
+  try { cap.focus(); } catch (e) {}
+})();
+</script>
+
+</body>
+</html>
